@@ -29,6 +29,13 @@ jobs:
           mkdir -p _site
           rsync -a --exclude='.git' --exclude='.github' --exclude='_site' ./ _site/
 
+      - name: Debug — มีค่า config ไหม (ไม่โชว์ค่าจริง)
+        run: |
+          echo "vars.SUPABASE_URL       set? ${{ vars.SUPABASE_URL != '' }}"
+          echo "secrets.SUPABASE_URL    set? ${{ secrets.SUPABASE_URL != '' }}"
+          echo "vars.SUPABASE_ANON_KEY  set? ${{ vars.SUPABASE_ANON_KEY != '' }}"
+          echo "secrets.SUPABASE_ANON_KEY set? ${{ secrets.SUPABASE_ANON_KEY != '' }}"
+
       - name: Generate Supabase config
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
