@@ -389,6 +389,12 @@
   <script src="config.js"></script>
   <script src="theme.js"></script>
   <script>
+    // ยังไม่ได้ตั้งค่า Supabase (เช่นรันในเครื่องก่อน deploy) -> ไปหน้า setup แทนที่จะ crash
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      alert('ยังไม่ได้ตั้งค่าฐานข้อมูล (Supabase) — ไปหน้าตั้งค่าก่อน');
+      location.href = 'setup.html';
+      throw new Error('Supabase config missing');
+    }
     const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
     const $ = id => document.getElementById(id);
     const show = (el,on) => el.classList.toggle('hidden', !on);
