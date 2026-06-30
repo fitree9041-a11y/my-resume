@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ทดสอบการเชื่อมต่อ Supabase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <style> body { font-family: system-ui, 'Segoe UI', sans-serif; } </style>
+</head>
+<body class="bg-slate-100 min-h-screen py-8 px-4">
+  <div class="max-w-xl mx-auto">
+    <h1 class="text-2xl font-bold text-slate-800 mb-1">🔌 ทดสอบเชื่อมต่อ Supabase</h1>
+    <p class="text-sm text-slate-500 mb-6">กรอก URL + anon key แล้วกดทดสอบ — ระบบจะลองยิง query จริงไปยังทุกตาราง</p>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Supabase URL</label>
+        <input id="url" type="text" placeholder="https://xxxx.supabase.co"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">anon public key</label>
+        <textarea id="key" rows="3" placeholder="eyJhbGciOi..."
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400"></textarea>
+        <p id="keyWarn" class="text-xs text-rose-500 mt-1 hidden">⚠️ นี่คือ service_role key (อันตราย) — ใช้ anon public เท่านั้น</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="btnTest" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm py-2.5 rounded-lg transition">ทดสอบเชื่อมต่อ</button>
+        <button id="btnSave" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm py-2.5 rounded-lg transition" title="บันทึกลง localStorage เบราว์เซอร์นี้">บันทึก</button>
+      </div>
+      <p id="src" class="text-[11px] text-slate-400"></p>
+    </div>
+
+    <div id="result" class="mt-5 space-y-2"></div>
+  </div>
+
+  <!-- โหลดค่าที่ตั้งไว้ (config.js จาก deploy / localStorage) มา prefill -->
+  <script src="config.js" onerror="void 0"></script>
+  <script>
+    const TABLES = ['site_settings', 'projects', 'showcase'];
+    const $ = (id) => document.getElementById(id);
+    const result = $('result');
+
+    // prefill จากค่าที่มี
+    let pre = {};
+    try { pre = JSON.parse(localStorage.getItem('resume_db_config') || '{}'); } catch (e) {}
+    const preUrl = (pre && pre.url) || window.SUPABASE_URL || '';
+    const preKey = (pre && pre.anonKey) || window.SUPABASE_ANON_KEY || '';
+    if (preUrl) $('url').value = preUrl;
+    if (preKey) $('key').value = preKey;
+    $('src').textContent = preUrl
+      ? 'พบค่าที่ตั้งไว้แล้ว (จาก ' + ((pre && pre.url) ? 'localStorage' : 'config.js') + ') — กดทดสอบได้เลย'
+      : 'ยังไม่มีค่าที่ตั้งไว้ — กรอกเองด้านบน';
+
+    $('key').addEventListener('input', () => {
+      $('keyWarn').classList.toggle('hidden', !/service_role/.test($('key').value));
+    });
+
+    const STYLE = {
+      ok:   { box: 'border-emerald-200', title: 'text-emerald-700', icon: '✅' },
+      warn: { box: 'border-amber-200',   title: 'text-amber-700',   icon: '⚠️' },
+      err:  { box: 'border-rose-200',    title: 'text-rose-700',    icon: '❌' },
+    };
+    function card(state, title, detail) {
+      const s = STYLE[state] || STYLE.err;
+      const div = document.createElement('div');
+      div.className = 'bg-white rounded-xl border p-3.5 text-sm ' + s.box;
+      div.innerHTML = '<p class="font-semibold ' + s.title + '">' + s.icon + ' ' + title + '</p>' +
+        (detail ? '<p class="text-slate-500 text-xs mt-1 break-words font-mono">' + detail + '</p>' : '');
+      result.appendChild(div);
+    }
+
+    $('btnSave').addEventListener('click', () => {
+      const url = $('url').value.trim(), anonKey = $('key').value.trim();
+      if (!url || !anonKey) { alert('กรอก URL และ key ก่อน'); return; }
+      localStorage.setItem('resume_db_config', JSON.stringify({ url, anonKey }));
+      alert('บันทึกลงเบราว์เซอร์นี้แล้ว — admin.html จะใช้ค่านี้');
+    });
+
+    $('btnTest').addEventListener('click', async () => {
+      result.innerHTML = '';
+      const url = $('url').value.trim();
+      const key = $('key').value.trim();
+
+      if (!url || !key) { card('err', 'ยังไม่ได้กรอกค่า', 'ต้องมีทั้ง URL และ anon key'); return; }
+      if (!/^https:\/\/.+\.supabase\.co\/?$/.test(url)) { card('warn', 'รูปแบบ URL อาจไม่ถูก', 'ควรเป็น https://xxxx.supabase.co'); }
+      if (/service_role/.test(key)) { card('err', 'ใช้ service_role key ไม่ได้', 'ต้องใช้ anon public key เท่านั้น'); return; }
+
+      let sb;
+      try {
+        sb = supabase.createClient(url, key);
+        card('ok', 'สร้าง client สำเร็จ', url);
+      } catch (e) {
+        card('err', 'สร้าง client ไม่ได้', e.message); return;
+      }
+
+      let okCount = 0;
+      for (const t of TABLES) {
+        try {
+          const { count, error } = await sb.from(t).select('*', { count: 'exact', head: true });
+          if (error) {
+            const hint = /JWT|apikey|invalid|401/i.test(error.message) ? ' (key อาจผิด)'
+                       : /does not exist|404|relation/i.test(error.message) ? ' (ยังไม่ได้สร้างตาราง — รัน schema.sql)'
+                       : /permission|RLS|policy/i.test(error.message) ? ' (ติด RLS policy)' : '';
+            card('err', 'ตาราง ' + t + ' : อ่านไม่ได้', (error.message || '') + hint);
+          } else {
+            okCount++;
+            card('ok', 'ตาราง ' + t + ' : อ่านได้', (count ?? 0) + ' แถว');
+          }
+        } catch (e) {
+          card('err', 'ตาราง ' + t + ' : error', e.message || String(e));
+        }
+      }
+
+      if (okCount === TABLES.length) card('ok', 'เชื่อมต่อสมบูรณ์ 🎉', 'อ่านได้ครบทุกตาราง — config ใช้งานได้');
+      else if (okCount > 0) card('warn', 'เชื่อมต่อได้บางส่วน', 'อ่านได้ ' + okCount + '/' + TABLES.length + ' ตาราง — ดูตารางที่ error ด้านบน');
+      else card('err', 'เชื่อมต่อไม่ได้', 'อ่านไม่ได้สักตาราง — เช็ค URL/key หรือว่ายังไม่ได้รัน schema.sql');
+    });
+  </script>
+</body>
+</html>
