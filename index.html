@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>สมยศ ดีวิจิตร — Resume</title>
+<title>Resume</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
@@ -196,7 +196,7 @@
           <span id="ld-photo-fb">CV</span>
         </div>
       </div>
-      <p class="loader-name">Somyot Deewijit</p>
+      <p id="ld-name" class="loader-name">Full Name</p>
       <p class="loader-sub">กำลังโหลด</p>
     </div>
   </div>
@@ -241,12 +241,12 @@
                  onerror="this.style.display='none'; var fb=document.getElementById('pf-photo-fb'); if(fb) fb.style.display='';" />
             <span id="pf-photo-fb" class="text-5xl font-extrabold text-white">CV</span>
           </div>
-          <p id="pf-namescript" class="font-script text-3xl text-gold-400 mt-2 leading-none">Somyot Deewijit</p>
+          <p id="pf-namescript" class="font-script text-3xl text-gold-400 mt-2 leading-none">Full Name</p>
         </div>
 
         <!-- name + title + badges -->
         <div class="reveal flex-1 text-center sm:text-left" style="animation-delay:.05s">
-          <h1 id="pf-name" class="text-4xl md:text-5xl font-extrabold tracking-tight">นายสมยศ ดีวิจิตร</h1>
+          <h1 id="pf-name" class="text-4xl md:text-5xl font-extrabold tracking-tight">ชื่อ-นามสกุล</h1>
           <p id="pf-title" class="mt-2 text-navy-200 font-medium">
             เจ้าพนักงานห้องสมุด • เทคโนโลยีการศึกษา • สื่อดิจิทัล • พัฒนาระบบงาน
           </p>
@@ -653,6 +653,8 @@
 
         setText('pf-name', p.name); setText('pf-namescript', p.name_script);
         setText('pf-title', p.title); setText('pf-summary', p.summary);
+        if (p.name) document.title = p.name + ' — Resume'; // ตั้ง title ตามชื่อเจ้าของจาก DB
+        setText('ld-name', p.name_script || p.name);
         if (p.photo_url) {
           const img = document.getElementById('pf-photo');
           if (img) { img.src = p.photo_url; img.style.display = ''; const fb = document.getElementById('pf-photo-fb'); if (fb) fb.style.display = 'none'; }

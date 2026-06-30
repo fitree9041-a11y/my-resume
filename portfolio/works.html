@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ผลงาน & ความสำเร็จ — สมยศ ดีวิจิตร</title>
+<title>ผลงาน & ความสำเร็จ</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
@@ -21,6 +21,7 @@
       if (map.theme) DCLTheme.applyTheme(map.theme);
       // หน้า loading: รูปโปร + ชื่อ (เหมือนหน้า resume)
       const p = map.profile || {};
+      if (p.name) document.title = 'ผลงาน & ความสำเร็จ — ' + p.name; // title ตามชื่อเจ้าของจาก DB
       const apply = () => {
         if (p.photo_url) { const im = document.getElementById('ld-photo'); if (im) { im.src = p.photo_url; im.style.display = ''; const fb = document.getElementById('ld-photo-fb'); if (fb) fb.style.display = 'none'; } }
         const nm = document.getElementById('ld-name'); if (nm && p.name_script) nm.textContent = p.name_script;
