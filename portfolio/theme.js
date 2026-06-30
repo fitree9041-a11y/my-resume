@@ -34,13 +34,24 @@
     return { 400: triplet(mixWhite(b, 0.20)), 500: triplet(b), 600: triplet(mixBlack(b, 0.20)) };
   }
 
-  // ใช้ธีมกับ :root (set CSS variables เป็น "r g b")
-  function applyTheme(theme) {
+  const CACHE_KEY = 'dcl_theme';
+
+  // ใช้ธีมกับ :root (set CSS variables เป็น "r g b") + cache ไว้กันจอแวบตอนเปลี่ยนหน้า
+  function applyTheme(theme, skipCache) {
     if (!theme || !theme.primary || !theme.accent) return;
     const root = document.documentElement;
     const navy = navyScale(theme.primary), gold = goldScale(theme.accent);
     for (const k in navy) root.style.setProperty('--navy-' + k, navy[k]);
     for (const k in gold) root.style.setProperty('--gold-' + k, gold[k]);
+    if (!skipCache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(theme)); } catch (e) {} }
+  }
+
+  // อ่านธีมล่าสุดจาก cache แล้ว apply ทันที (เรียกตอนโหลด ก่อน DB จะตอบ -> ไม่แวบสีเดิม)
+  function applyCachedTheme() {
+    try {
+      const t = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (t) applyTheme(t, true);
+    } catch (e) {}
   }
 
   const DEFAULT_THEME = { name: 'กรมท่า–ทอง', primary: '#1d2f73', accent: '#eaa916' };
@@ -56,5 +67,8 @@
     { name: 'น้ำเงิน–ชมพู', primary: '#1e40af', accent: '#ec4899' },
   ];
 
-  global.DCLTheme = { hexToRgb, navyScale, goldScale, applyTheme, DEFAULT_THEME, PRESETS };
+  global.DCLTheme = { hexToRgb, navyScale, goldScale, applyTheme, applyCachedTheme, DEFAULT_THEME, PRESETS };
+
+  // apply ธีมจาก cache ทันทีที่สคริปต์โหลด (theme.js อยู่ใน <head> -> ก่อน paint)
+  applyCachedTheme();
 })(window);
